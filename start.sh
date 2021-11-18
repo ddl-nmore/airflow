@@ -1,14 +1,17 @@
 #!/bin/bash
 
+
+POSTGRESQL_VERSION=10
+
 #Check if Airflow Dir is present in Domino Project....if not create airflow directory
 if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
 	echo "Creating Airflow Directory"
     mkdir -p  $DOMINO_WORKING_DIR/airflow/{dags,logs,postgresql}
     #build, link and modify postgres config files.
     echo "Move postgresql files into Domino Directory" 
-	sudo chmod 777 -R /etc/postgresql/9.3/main/
-	cp /etc/postgresql/9.3/main/postgresql.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
-	cp /etc/postgresql/9.3/main/pg_hba.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
+	sudo chmod 777 -R /etc/postgresql/$POSTGRESQL_VERSION/main/
+	cp /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
+	cp /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
 	#configure pg_hba.conf
 	echo "Configure pg_hba.conf"
 	sed -i '85s/peer/trust/' "$DOMINO_WORKING_DIR"/airflow/postgresql/pg_hba.conf
@@ -26,25 +29,25 @@ if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
 	export AIRFLOW_HOME=/home/ubuntu/airflow && airflow db init
 	cp /home/ubuntu/airflow/airflow.cfg "$DOMINO_WORKING_DIR"/airflow/
 	#configure and create symbolic link to new config file
-	echo "Congire Airflow.cfg >>>>> Link File"
+	echo "Configure Airflow.cfg >>>>> Link File"
 	#dag dir 
-	sed -i '4s#/home/ubuntu/airflow/dags#'"$DOMINO_WORKING_DIR"'/airflow/dags#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(dags_folder =).*#\1 "$DOMINO_WORKING_DIR"/airflow/dags#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#log dir
-	sed -i '8s#/home/ubuntu/airflow/logs#'"$DOMINO_WORKING_DIR"'/airflow/logs#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(base_log_folder =).*#\1 "$DOMINO_WORKING_DIR"/airflow/logs#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#proscess manager log
-	sed -i '47s#/home/ubuntu/airflow/logs/dag_processor_manager/dag_processor_manager.log#'"$DOMINO_WORKING_DIR"'/airflow/logs/dag_processor_manager/dag_processor_manager.log#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(dag_processor_manager_log_location =).*#\1 "$DOMINO_WORKING_DIR"/airflow/logs/dag_processor_manager/dag_processor_manager.log#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#Executor
-	sed -i '69s#SequentialExecutor#LocalExecutor#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(executor =).*#\1 LocalExecutor#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#DB connecion 
-	sed -i '74s#sqlite:////home/ubuntu/airflow/airflow.db#postgresql+psycopg2://airflow:airflow@localhost/airflow#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(sql_alchemy_conn =).*#\1 postgresql+psycopg2://airflow:airflow@localhost/airflow#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#Load Examples
-	sed -i '136s#True#False#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(load_examples =).*#\1 False#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#Load default connections
-	sed -i '141s#True#False#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
-	#Expost Config file in UI
-	sed -i '343s#False#True#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(load_default_connections =).*#\1 False#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	#Expose Config file in UI
+	sed -i -E "s#(expose_config =).*#\1 True#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	#Catchup by default
-	sed -i '639s#True#False#' "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
+	sed -i -E "s#(catchup_by_default =).*#\1 False#" "$DOMINO_WORKING_DIR"/airflow/airflow.cfg
 	
 	#add demo DAGS
 	curl https://raw.githubusercontent.com/Jphelps87/AirflowWorkspace/main/domino-pipeline.py --output "$DOMINO_WORKING_DIR"/airflow/dags/domino-pipeline.py
@@ -62,7 +65,7 @@ echo "link custom airflow.cfg"
 #Create symbolic link and remove default file
 FILE=/home/ubutu/airflow/airflow.cfg
 if [ -f /home/ubuntu/airflow/airflow.cfg ]; then
-        echo "removeing old airflow.cfg file"
+        echo "removing old airflow.cfg file"
         rm  /home/ubuntu/airflow/airflow.cfg
 fi
 #build sub_domain url and refactor for each run.
@@ -77,5 +80,5 @@ airflow variables -s DOMINO_API_HOST $DOMINO_API_HOST
 airflow variables -s DOMINO_USER_API_KEY $DOMINO_USER_API_KEY
 #start airflow webserver and scheduler
 echo "Starting up Airflow"
-airflow webserver -p 8080 -hn "0.0.0.0" &
+airflow webserver -p 8080 -H "0.0.0.0" &
 airflow scheduler
