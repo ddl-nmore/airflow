@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e 
+POSTGRESQL_VERSION=10
 
 #Check if Airflow Dir is present in Domino Project....if not create airflow directory
 if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
@@ -7,9 +8,9 @@ if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
     mkdir -p  $DOMINO_WORKING_DIR/airflow/{dags,logs,postgresql}
     #build, link and modify postgres config files.
     echo "Move postgresql files into Domino Directory" 
-	sudo chmod 777 -R /etc/postgresql/9.3/main/
-	cp /etc/postgresql/9.3/main/postgresql.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
-	cp /etc/postgresql/9.3/main/pg_hba.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
+	sudo chmod 777 -R /etc/postgresql/$POSTGRESQL_VERSION/main/
+	cp /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
+	cp /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf "$DOMINO_WORKING_DIR"/airflow/postgresql/
 	#configure pg_hba.conf
 	echo "Configure pg_hba.conf"
 	sed -i '85s/peer/trust/' "$DOMINO_WORKING_DIR"/airflow/postgresql/pg_hba.conf
@@ -19,8 +20,8 @@ if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
 	echo "Configure postgresql.conf"
 	sed -i '59s/#listen_addresses/listen_addresses/' "$DOMINO_WORKING_DIR"/airflow/postgresql/postgresql.conf
 	#remove old and link new
-	rm /etc/postgresql/9.3/main/postgresql.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/postgresql.conf /etc/postgresql/9.3/main/postgresql.conf
-	rm /etc/postgresql/9.3/main/pg_hba.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/pg_hba.conf /etc/postgresql/9.3/main/pg_hba.conf	
+	rm /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/postgresql.conf /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf
+	rm /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/pg_hba.conf /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf	
 	
 	#build Airflow config file
 	echo "Create Airflow.cfg"
@@ -63,7 +64,7 @@ echo "link custom airflow.cfg"
 #Create symbolic link and remove default file
 FILE=/home/ubutu/airflow/airflow.cfg
 if [ -f /home/ubuntu/airflow/airflow.cfg ]; then
-        echo "removeing old airflow.cfg file"
+        echo "removing old airflow.cfg file"
         rm  /home/ubuntu/airflow/airflow.cfg
 fi
 #build sub_domain url and refactor for each run.
