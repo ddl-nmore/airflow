@@ -76,8 +76,8 @@ echo "Domino URL"
 actual= cat /home/ubuntu/airflow/airflow.cfg | grep base_url
 
 airflow db init
-airflow variables -s DOMINO_API_HOST $DOMINO_API_HOST
-airflow variables -s DOMINO_USER_API_KEY $DOMINO_USER_API_KEY
+airflow variables set DOMINO_API_HOST $DOMINO_API_HOST
+airflow variables set DOMINO_USER_API_KEY $DOMINO_USER_API_KEY
 #start airflow webserver and scheduler
 echo "Starting up Airflow"
 airflow webserver -p 8080 -H "0.0.0.0" &
