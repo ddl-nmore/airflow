@@ -21,8 +21,8 @@ if [ ! -d $DOMINO_WORKING_DIR/airflow ]; then
 	echo "Configure postgresql.conf"
 	sed -i '59s/#listen_addresses/listen_addresses/' "$DOMINO_WORKING_DIR"/airflow/postgresql/postgresql.conf
 	#remove old and link new
-	rm /etc/postgresql/9.3/main/postgresql.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/postgresql.conf /etc/postgresql/9.3/main/postgresql.conf
-	rm /etc/postgresql/9.3/main/pg_hba.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/pg_hba.conf /etc/postgresql/9.3/main/pg_hba.conf	
+	rm /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/postgresql.conf /etc/postgresql/$POSTGRESQL_VERSION/main/postgresql.conf
+	rm /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf && ln -s $DOMINO_WORKING_DIR/airflow/postgresql/pg_hba.conf /etc/postgresql/$POSTGRESQL_VERSION/main/pg_hba.conf	
 	
 	#build Airflow config file
 	echo "Create Airflow.cfg"
